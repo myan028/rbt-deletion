@@ -24,6 +24,16 @@ Node* addNode(Node**, Node*, int);
 void printTree(Node*, int);
 Node* fixTree(Node**, Node*);
 Node* rotateTree(Node**, Node*, int);
+Node* search(Node*, int);
+void remove(Node**, int);
+Node* predecessor(Node*);
+Node* getSibling(Node*);
+void case1(Node**, Node*);
+void case2(Node**, Node*);
+void case3(Node**, Node*);
+void case4(Node**, Node*);
+void case5(Node**, Node*);
+void case6(Node**, Node*);
 
 
 using namespace std;
@@ -249,9 +259,9 @@ Node* rotateTree(Node** head, Node* current, int leftright){ //rotate tree to re
 }
 
 
-Node* search(int number, Node* current){ //search tree for node with certain value
+Node* search(Node* current, int number){ //search tree for node with certain value
 	
-	if (number == current -> getData()){
+	if (number == current->getData()){
 		return current;
 	}
 	else if (number > current->getData()){
@@ -259,22 +269,221 @@ Node* search(int number, Node* current){ //search tree for node with certain val
 			return NULL;
 		}
 		else{
-			search(number, current->getRight());
+			search(current->getRight(), number);
 		}
 	}
 
 	else if (number < current->getData()){
-		if (current -> getLeft() == NULL){
+		if (current->getLeft() == NULL){
 			return NULL;
 		}
 		else{
-			search(number, current -> getLeft());
+			search(current->getLeft(), number);
 		}
 	}
 	else {
 		return NULL;
 	}
 }
+
+
+
+void remove(Node** head, int number){
+	Node* deleteNode = search((*head), number); //call search first
+	Node* current1 = NULL;
+	Node* current2;
+	Node* nextNode = new Node();
+	if (deleteNode != NULL){
+		if (deleteNode->getLeft() == NULL || deleteNode->getRight() == NULL){
+			current1 = deleteNode;
+		}
+		else{
+			current1 = predecessor(deleteNode);
+		}
+		if (current1 != deleteNode){
+			deleteNode->setData(current1->getData());
+		}
+		if(current1->getLeft() != NULL){
+			current2 = current1->getLeft();
+		}
+		else{
+			current2 = current1->getRight();
+		}
+		if (current2 == NULL){
+			current2 = nextNode;
+			current2->setColor(1);
+		}
+		current2->setParent(current1->getParent());
+		if (current1->getParent() == NULL){
+			(*head) = current2;
+		}
+		else{
+			if(current1 == current1->getParent()->getLeft()){
+				current1->getParent()->setLeft(current2);
+			}
+			else{
+				current1->getParent()->setRight(current2);
+			}
+		}
+		if(current1->getColor() == 1){
+			if(current2->getColor() == 1){
+				case1(head, current2); //call first case
+			}
+			else{
+				current2->setColor(1);
+			}
+		}
+		
+		if((current2 == NULL) && (current2 != (*head))){
+			if(current2 == current1->getParent()->getLeft()){
+				current2->getParent()->setLeft(NULL);
+			}
+			else {
+				current2->getParent()->setRight(NULL);
+			}
+			current2->setParent(NULL);
+			delete current2; //delete
+		}
+		delete current1; //delete
+	}
+}
+
+
+Node* predecessor(Node* top){
+  if(top->getLeft() != NULL){
+    top = top->getLeft();
+  }
+  while(top -> getRight() != NULL){
+    top = top -> getRight();
+  }
+  return top;
+}
+
+
+Node* getSibling(Node* current){ //get sibling store as node
+	Node* sibling;
+	if(current->getParent()->getLeft() == current){
+		sibling = current->getParent()->getRight();
+	}
+	else{
+		sibling = current->getParent()->getLeft();
+	}
+	return sibling;
+}
+
+
+
+
+void case1(Node** head, Node* current){
+	if(current->getParent() != NULL){
+		case2(head, current);
+	}
+}
+
+void case2(Node** head, Node* current){
+	Node* sibling = getSibling(current);
+	
+	if(sibling->getColor() == 0){
+		current->getParent()->setColor(0);
+		sibling->setColor(1);
+		if(current == current->getParent()->getLeft()){
+			rotateTree(head, current->getParent(), 0); //left
+		}
+		else{
+			rotateTree(head, current->getParent(), 1); //right
+		}
+	}
+	case3(head, current);
+	
+}
+
+void case3(Node** head, Node* current){
+	Node* sibling = getSibling(current);
+	
+	if(
+	(current->getParent()->getColor() == 1) && 
+	(sibling->getColor() == 1) && 
+	(sibling->getLeft() == NULL || sibling->getLeft()->getColor() == 1) &&
+	(sibling->getRight() == NULL || sibling->getRight()->getColor() == 1)
+	){
+		sibling->setColor(0);
+		case1(head, current->getParent());
+	}
+	else{
+		case4(head, current);
+	}
+	
+}
+
+void case4(Node** head, Node* current){
+	Node* sibling = getSibling(current);
+	
+	if(current->getParent()->getColor() == 0 && sibling->getColor() == 1){
+		if(
+		(sibling->getLeft() == NULL || sibling->getLeft()->getColor() == 1) &&
+		(sibling->getRight() == NULL || sibling->getRight()->getColor() == 1)
+		){
+			sibling->setColor(0);
+			current->getParent()->setColor(1);
+		}
+		else{
+			case5(head, current);
+		}
+	}
+	else{
+		case5(head, current);
+	}
+	
+}
+
+void case5(Node** head, Node* current){
+	Node* sibling = getSibling(current);
+	
+	if(sibling->getColor() == 1){
+		if(
+		(current == current->getParent()->getLeft()) &&
+		((sibling->getRight() == NULL) || (sibling->getRight()->getColor() == 1))
+		){
+			sibling->setColor(0);
+			sibling->getLeft()->setColor(1);
+			rotateTree(head, sibling, 1); //right
+		}
+		else if(
+		(current == current->getParent()->getRight()) &&
+		((sibling->getLeft() == NULL) || (sibling->getLeft()->getColor() == 1))
+		){
+			sibling->setColor(0);
+			sibling->getRight()->setColor(1);
+			rotateTree(head, sibling, 0); //left
+		}
+	}
+	
+	case6(head, current);
+	
+}
+
+void case6(Node** head, Node* current){
+	Node* sibling = getSibling(current);
+	
+	sibling->setColor(current->getParent()->getColor());
+	current->getParent()->setColor(1);
+	
+	if(current == current->getParent()->getLeft()){
+		sibling->getRight()->setColor(1);
+		rotateTree(head, current->getParent(), 0); //left
+	}
+	else{
+		sibling->getLeft()->setColor(1);
+		rotateTree(head, current->getParent(), 1); //right
+	}
+	
+}
+
+
+
+
+
+
 
 
  
@@ -335,8 +544,8 @@ int main(){
 				cin >> number;
 				cin.clear();
 				cin.ignore(9999, '\n');
-				Node* searchResult = search(number, head);
-				if(searchResult != NULL){ //if search node is not null, the value exists
+				Node* searchResult = search(head, number);
+				if(searchResult != NULL){ //if search Node is not null, the value exists
 					cout << number << " was found!" << endl;
 				}
 				else{ //else no matching node was found
@@ -344,6 +553,20 @@ int main(){
 				}
 			}
 		}
+		
+		else if(strcmp(command, "delete") == 0){
+			if(head->getData() == NULL){ //don't delete from an empty tree
+				cout << "(tree is empty)" << endl;
+			}
+			else{
+				cout << "Enter the number you would like to delete: ";
+				cin >> number;
+				cin.clear();
+				cin.ignore(9999, '\n');
+				remove(&head, number); //
+			}
+		}
+		
         
         else if(strcmp(command, "quit") == 0){ //if user wants to quit program
             return false; //quit program
